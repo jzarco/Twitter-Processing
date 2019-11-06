@@ -1,0 +1,4 @@
+[2019-11-06 11:21:33]     INFO --- Listening on port: 5555 (main.py:54)
+[2019-11-06 11:21:33]     INFO --- Host address: 127.0.0.1 (main.py:55)
+[2019-11-06 11:21:33]     INFO --- Topics listening on: ['machinelearning', 'machine learning', 'deeplearning', 'deep learning'] (main.py:59)
+[2019-11-06 11:21:33]    DEBUG --- Topics: ['machinelearning', 'machine learning', 'deeplearning', 'deep learning'] (main.py:60)
