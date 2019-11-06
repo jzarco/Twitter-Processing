@@ -9,10 +9,10 @@ import pickle
 import datetime
 import os
 
-consumer_key = 'mspsDGQfT4NOYW5ZicnWQ9BPP'
-consumer_secret = 'NRxCkfLpnmOHT7Wyt7rGKOPyaMMoluqHcINOF6Avw54efRxtac'
-access_token = '1185999760832061442-XdUvPnd1nBCnR0utKFEoWWv9dz1YiT'
-access_secret = 'nzxAClrVyKhVfL2IVI3IFDXcf3qSeUodNaPIjFGqHzEK4'
+consumer_key = ''
+consumer_secret = ''
+access_token = ''
+access_secret = ''
 
 dir = os.path.dirname(os.path.realpath(__file__))
 today = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
