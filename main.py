@@ -61,7 +61,7 @@ def main():
 
         sendData(topics)
     except (KeyboardInterrupt):
-        pass
+        sys.exit(0)
     except SystemExit:
         raise
     except Exception as e:

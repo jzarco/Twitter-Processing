@@ -1,12 +1,10 @@
 import pickle
 import nltk
-nltk.download('wordnet')
 from nltk.stem import WordNetLemmatizer
 import spacy
 from spacy_langdetect import LanguageDetector
-
-nlp = spacy.load('en')
-lemmatizer = WordNetLemmatizer()
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 def read_pickle(fp):
     with open(fp, 'rb') as f:
@@ -36,12 +34,24 @@ def hashtags_counter(data):
 class WordCleaner:
 
     def __init__(self, corpus):
-        self.corpus = corpus
+        self.corpus = [{'id': i, 'doc': doc} for i, doc in enumerate(corpus)]
+        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp.add_pipe(LanguageDetector(),name='language_detector', last=True)
+        nltk.download('wordnet')
+        self.lemmatizer = WordNetLemmatizer()
 
-    def detect_languages(self, keep_lang='en'):
-        pass
+    #def detect_languages(self, keep_lang='en'):
+    #    for _dict in self.corpus:
+    #        lan = self.nlp(_dict['doc'])._.language['language']
+    #        if
+    #        _dict['lan'] =
 
     def clean_text(self):
+        #step 1, remove punctuation
+        #step 2, lower case words
+        #step 3, remove stop words
+        #step 4, lemmatize the words
+        #step 5, join the words back into string
         pass
 
     def remove_stopwords(self):
@@ -50,8 +60,31 @@ class WordCleaner:
     def lemmatize(self):
         pass
 
-def clean_text(text):
-    pass
+class Tokenizer(WordCleaner):
 
+    def __init__(self):
+        super().__init__()
+        self.tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level = False)
+        self.__tokenization_results = list()
+
+    def tokenize(self):
+        docs = [(_dict['id'] ,_dict['doc']) for _dict in self.corpus]
+        sequences = list()
+        for id,doc in docs:
+            self.tokenizer.fit_on_texts(doc)
+            self.__tokenization_results.append({'id': id, 'tokens':self.tokenizer.texts_to_sequences(doc)})
+            sequences.append(self.tokenizer.texts_to_sequences(doc))
+        self.max_sequence = len(max(sequences, key=len))
+
+    def pad(self, length=None, pad_method='post'):
+        if length is None:
+            length = self.max_sequence
+        self.__padded_sequences = list()
+        for results in self.__tokenization_results:
+            seq = results['tokens']
+            id = results['id']
+            pad = pad_sequences(seq, maxlen= length, padding = pad_method)
+
+            self.__padded_sequences.append({'id': id, 'padded_tokens': pad})
 
 
