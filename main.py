@@ -59,7 +59,7 @@ def main():
         logger.info('Topics listening on: {}'.format(topics))
         logger.debug('Topics: {}'.format(topics))
 
-        sendData(topics)
+        sendData(topics,logger=logger)
     except (KeyboardInterrupt):
         sys.exit(0)
     except SystemExit:

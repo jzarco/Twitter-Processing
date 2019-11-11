@@ -40,12 +40,6 @@ class WordCleaner:
         nltk.download('wordnet')
         self.lemmatizer = WordNetLemmatizer()
 
-    #def detect_languages(self, keep_lang='en'):
-    #    for _dict in self.corpus:
-    #        lan = self.nlp(_dict['doc'])._.language['language']
-    #        if
-    #        _dict['lan'] =
-
     def clean_text(self):
         #step 1, remove punctuation
         #step 2, lower case words
