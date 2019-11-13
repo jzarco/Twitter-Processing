@@ -1,0 +1,4 @@
+[2019-11-13 09:21:45]     INFO --- Listening on port: 5555 (main.py:56)
+[2019-11-13 09:21:45]     INFO --- Host address: 127.0.0.1 (main.py:57)
+[2019-11-13 09:21:45]     INFO --- Topics listening on: ['hostel one', 'hostelone'] (main.py:61)
+[2019-11-13 09:21:45]    DEBUG --- Topics: ['hostel one', 'hostelone'] (main.py:62)

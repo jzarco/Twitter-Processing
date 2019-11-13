@@ -39,6 +39,7 @@ def get_args():
     parser.add_argument('-t', '--topics', help='Topics to present the Twitter Listener to listen by. Topics should be in comma separated list e.g. "topic1,topic2,topic3"', required=True, type=str)
     parser.add_argument('-o', '--host', default='127.0.0.1', help='Host domain to migrate the twitter streaming data towards.', type=str)
     parser.add_argument('-p', '--port', default=5555, help='Port number to send the twitter streaming data towards.', type=int)
+    parser.add_argument('-f', '--filename', default=None, help='Filename for saving streaming log files.', type=str)
 
     return parser.parse_args()
 
@@ -50,6 +51,7 @@ def main():
         s = socket.socket()
         host = args.host
         port = args.port
+        filename = args.filename
         s.bind((host, port))
         logger.info('Listening on port: {}'.format(port))
         logger.info('Host address: {}'.format(host))
@@ -59,11 +61,9 @@ def main():
         logger.info('Topics listening on: {}'.format(topics))
         logger.debug('Topics: {}'.format(topics))
 
-        sendData(topics,logger=logger)
+        sendData(topics,logger=logger, filename=filename)
     except (KeyboardInterrupt):
         sys.exit(0)
-    except SystemExit:
-        raise
     except Exception as e:
         logger.error("Unknown error occurred: {}", exc_info=True)
         raise

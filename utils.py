@@ -5,6 +5,7 @@ import spacy
 from spacy_langdetect import LanguageDetector
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import string
 
 def read_pickle(fp):
     with open(fp, 'rb') as f:
@@ -39,20 +40,35 @@ class WordCleaner:
         self.nlp.add_pipe(LanguageDetector(),name='language_detector', last=True)
         nltk.download('wordnet')
         self.lemmatizer = WordNetLemmatizer()
+        self.table = string.maketrans("","")
 
-    def clean_text(self):
-        #step 1, remove punctuation
-        #step 2, lower case words
-        #step 3, remove stop words
-        #step 4, lemmatize the words
-        #step 5, join the words back into string
-        pass
+    def clean_text(self, keep_punc=False, remove_stop=True, lemmatize=True):
+        self.__corpus = {}
+        for _dict in self.corpus:
+            self.__corpus['id'] = _dict['id']
+            # step 1, remove punctuation
+            # step 2, lower case words
+            if not keep_punc:
+                self.__corpus['doc'] = _dict['doc'].translate(self.table, string.punctuation).lower()
+            else:
+                self.__corpus['doc'] = _dict['doc'].lower()
+            # step 3, remove stop words
+            if remove_stop:
+                self.__corpus['doc'] = self.remove_stopwords(self.__corpus['doc'])
+            # step 4, lemmatize the words
+            if lemmatize:
+                self.__corpus['doc'] = self.lemmatize(self.__corpus['doc'])
+        return self.__corpus
 
-    def remove_stopwords(self):
-        pass
+    def remove_stopwords(self, doc):
+        word_list = doc.split(' ')
+        word_list = [word for word in word_list if not self.nlp.vocab(word)]
+        return word_list.join(' ')
 
-    def lemmatize(self):
-        pass
+    def lemmatize(self, doc):
+        word_list = doc.split(' ')
+        word_list = [self.lemmatizer.lemmatize(word) for word in word_list]
+        return word_list.join(' ')
 
 class Tokenizer(WordCleaner):
 

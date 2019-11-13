@@ -22,13 +22,13 @@ def handle_limit(cursor):
             time.sleep(15 * 60)
 
 
-def sendData(topics, logger=None):
+def sendData(topics, logger=None, filename=None):
     auth = TwitterAuthenticator(credentials.consumer_key,
                                 credentials.consumer_secret,
                                 credentials.access_token,
                                 credentials.access_secret).authenticate()
 
-    twitter_stream = Stream(auth, TweetListener(logger=logger))
+    twitter_stream = Stream(auth, TweetListener(logger=logger, filename=filename))
     twitter_stream.filter(track=topics, is_async=True)
 
 class TwitterAuthenticator:
