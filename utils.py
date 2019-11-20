@@ -5,12 +5,37 @@ import spacy
 from spacy_langdetect import LanguageDetector
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
 import string
+import re
 
 def read_pickle(fp):
+    tweets = list()
     with open(fp, 'rb') as f:
-        data = pickle.load(f)
-    return data
+        while True:
+            try:
+                tweets.append(pickle.load(f))
+            except EOFError:
+                break
+    return tweets
+
+def remove_url(s):
+    return re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', s, flags=re.MULTILINE)
+
+def strip_tweet_text(tweet_dict, retweets=True, removeUrl=True):
+    if retweets:
+        if removeUrl:
+            return tweet_dict['id'], remove_url(tweet_dict['text'])
+        else:
+            return tweet_dict['id'], tweet_dict['text']
+    else:
+        if 'retweeted_status' not in tweet_dict:
+            if removeUrl:
+                return tweet_dict['id'], remove_url(tweet_dict['text'])
+            else:
+                return tweet_dict['id'], tweet_dict['text']
+        else:
+            return None
 
 def hashtags_counter(data):
     """
@@ -35,54 +60,74 @@ def hashtags_counter(data):
 class WordCleaner:
 
     def __init__(self, corpus):
-        self.corpus = [{'id': i, 'doc': doc} for i, doc in enumerate(corpus)]
+        self.corpus = [{'id': _id, 'doc': doc} for _id, doc in corpus]
         self.nlp = spacy.load('en_core_web_sm')
-        self.nlp.add_pipe(LanguageDetector(),name='language_detector', last=True)
+        self.nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
         nltk.download('wordnet')
         self.lemmatizer = WordNetLemmatizer()
-        self.table = string.maketrans("","")
+        self.table = str.maketrans("","", string.punctuation)
 
-    def clean_text(self, keep_punc=False, remove_stop=True, lemmatize=True):
-        self.__corpus = {}
-        for _dict in self.corpus:
-            self.__corpus['id'] = _dict['id']
+    def clean_text(self, keep_punc=False, remove_stop=True, lemmatize=True, **kwargs):
+        """
+        :param keep_punc: default False inidicating to not keep punctuation through pre-processing
+        :param remove_stop: boolean indicating whether to remove stop words
+        :param lemmatize: boolean indicating to lemmatize words
+        :param kwargs: 'punc_list' - punctuation list of specific punctuations to remove.
+        :return: updated corpus that has been pre-processed.
+        """
+        accepted_keys = ['punc_list']
+        for key, val in kwargs.items():
+            if key in accepted_keys:
+                self.__dict__.update({key: val})
+            else:
+                raise ValueError('Unexpected kwarg found. Please use check which available kwargs are available.')
+        self.__corpus = self.corpus
+        for i, _dict in enumerate(self.corpus):
+            corpus = {}
+            corpus['id'] = _dict['id']
             # step 1, remove punctuation
             # step 2, lower case words
             if not keep_punc:
-                self.__corpus['doc'] = _dict['doc'].translate(self.table, string.punctuation).lower()
+                corpus['doc'] = re.sub(r'[^\w\s]', '', _dict['doc'].translate(self.table).lower().strip(), flags=re.MULTILINE)
             else:
-                self.__corpus['doc'] = _dict['doc'].lower()
+                corpus['doc'] = _dict['doc'].lower().strip()
             # step 3, remove stop words
             if remove_stop:
-                self.__corpus['doc'] = self.remove_stopwords(self.__corpus['doc'])
+                corpus['doc'] = self.remove_stopwords(corpus['doc'])
             # step 4, lemmatize the words
             if lemmatize:
-                self.__corpus['doc'] = self.lemmatize(self.__corpus['doc'])
+                corpus['doc'] = self.lemmatize(corpus['doc'])
+            self.__corpus[i] = corpus
         return self.__corpus
 
     def remove_stopwords(self, doc):
         word_list = doc.split(' ')
-        word_list = [word for word in word_list if not self.nlp.vocab(word)]
-        return word_list.join(' ')
+        word_list = [word for word in word_list if not self.nlp.vocab[word].is_stop]
+        return ' '.join(word_list)
 
     def lemmatize(self, doc):
         word_list = doc.split(' ')
         word_list = [self.lemmatizer.lemmatize(word) for word in word_list]
-        return word_list.join(' ')
+        return ' '.join(word_list)
 
 class Tokenizer(WordCleaner):
 
-    def __init__(self):
-        super().__init__()
-        self.tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level = False)
+    def __init__(self, corpus):
+        super(Tokenizer, self).__init__(corpus)
+        self.tokenizer = tf.keras.preprocessing.text.Tokenizer()
         self.__tokenization_results = list()
 
-    def tokenize(self):
-        docs = [(_dict['id'] ,_dict['doc']) for _dict in self.corpus]
+    def tokenize(self, keep_punc=False, remove_stop=True, lemmatize=True):
+        self.__corpus = self.clean_text(keep_punc, remove_stop, lemmatize)
+        docs = [(_dict['id'] ,_dict['doc']) for _dict in self.__corpus]
+        full_doc = list()
+        for _, doc in docs:
+            full_doc.append(doc)
+        corpus = ' '.join(full_doc)
+        self.tokenizer.fit_on_texts([corpus])
         sequences = list()
-        for id,doc in docs:
-            self.tokenizer.fit_on_texts(doc)
-            self.__tokenization_results.append({'id': id, 'tokens':self.tokenizer.texts_to_sequences(doc)})
+        for _id, doc in docs:
+            self.__tokenization_results.append({'id': _id, 'tokens': self.tokenizer.texts_to_sequences([doc])})
             sequences.append(self.tokenizer.texts_to_sequences(doc))
         self.max_sequence = len(max(sequences, key=len))
 
@@ -96,5 +141,17 @@ class Tokenizer(WordCleaner):
             pad = pad_sequences(seq, maxlen= length, padding = pad_method)
 
             self.__padded_sequences.append({'id': id, 'padded_tokens': pad})
+
+    def get_tokens(self):
+        return self.__tokenization_results
+
+    def get_sequences(self):
+        return self.__padded_sequences
+
+    def get_message(self, _id):
+        for _dict in self.__corpus:
+            if _id in _dict:
+                return _dict
+        return None
 
 
